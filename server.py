@@ -11,9 +11,13 @@ app = Flask(__name__)
 fe = FeatureExtractor()
 features = []
 img_paths = []
-for feature_path in Path("./static/feature").glob("*.npy"):
+# added support for nested directories
+for feature_path in Path("./static/feature").glob("**/*.npy"):
     features.append(np.load(feature_path))
-    img_paths.append(Path("./static/img") / (feature_path.stem + ".jpg"))
+    # just remove the npy extension and reverse the static folder to get the file.
+    img_path = Path(str(feature_path).replace("static/feature", "static/img").replace(".npy", ""))
+    img_paths.append(img_path)
+
 features = np.array(features)
 
 
@@ -30,7 +34,7 @@ def index():
         # Run search
         query = fe.extract(img)
         dists = np.linalg.norm(features-query, axis=1)  # L2 distances to features
-        ids = np.argsort(dists)[:30]  # Top 30 results
+        ids = np.argsort(dists)[:15]  # Top 15 results
         scores = [(dists[id], img_paths[id]) for id in ids]
 
         return render_template('index.html',
